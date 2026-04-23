@@ -89,5 +89,12 @@ Os dados foram organizados em formato tabular estruturado, pronto para ingestão
 ---
 
 ## Authors
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+**Deise Ferreira de Souza**  
+
+  Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)  
+  
+**Jorge Kamassury**
+
+  Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
 
