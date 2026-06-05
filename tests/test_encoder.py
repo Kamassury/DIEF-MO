@@ -1,6 +1,6 @@
 import pytest
 
-from dief_mo.encoder import generate_id, decode_id
+from dief_mo.encoder import generate_id, decode_id, validate_code
 
 
 def test_generate_basic():
@@ -19,6 +19,21 @@ def test_generate_rejects_empty():
 def test_generate_rejects_zero_seq():
     with pytest.raises(ValueError):
         generate_id("E001", "PRO", "M001", 0)
+
+
+def test_generate_rejects_underscore_in_code():
+    # underscore is the separator and must never appear inside a code part
+    with pytest.raises(ValueError):
+        generate_id("E001", "P_RO", "M001", 1)
+
+
+def test_generate_rejects_space_in_code():
+    with pytest.raises(ValueError):
+        generate_id("E001", "PR O", "M001", 1)
+
+
+def test_validate_code_trims():
+    assert validate_code("  PRO  ", "area") == "PRO"
 
 
 def test_decode_roundtrip():
