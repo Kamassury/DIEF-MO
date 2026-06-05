@@ -1,100 +1,142 @@
-# DIEF-MO  
+# DIEF-MO
+
 **AI-Ready Multi-Omics Data Integration & Encoding Framework**
 
 ## Overview
-A integração de dados multi-ômicos é essencial para a análise de sistemas biológicos complexos e para aplicações em Inteligência Artificial (IA). No entanto, desafios como heterogeneidade, ausência de padronização e falta de rastreabilidade comprometem a qualidade e a reprodutibilidade das análises.
 
-O **DIEF-MO** foi desenvolvido para resolver esses problemas por meio de um framework estruturado de **padronização, codificação e data lineage**, preparando os dados para integração e uso em modelos de machine learning.
+Multi-omics data integration is essential for analyzing complex biological
+systems and for Artificial Intelligence (AI) applications. However, challenges
+such as heterogeneity, lack of standardization, and missing traceability
+compromise the quality and reproducibility of analyses.
 
----
+**DIEF-MO** addresses these problems through a structured framework for
+**standardization, encoding, and data lineage**, preparing data for integration
+and use in machine learning models.
 
 ## Objective
-Desenvolver um framework de codificação padronizada para dados multi-ômicos que:
-- Preserve a rastreabilidade completa dos dados (*data lineage*)
-- Estruture experimentos e amostras de forma consistente
-- Permita integração entre diferentes áreas e tipos de dados
-- Prepare os dados para aplicação em modelos de IA
 
----
+Provide a standardized encoding framework for multi-omics data that:
 
-## Methodology
+- Preserves full data traceability (*data lineage*)
+- Structures experiments and samples consistently
+- Enables integration across different areas and data types
+- Prepares data for use in AI models
 
-O framework utiliza um **identificador único padronizado para cada ensaio**, composto por subcódigos que representam:
+## Identifier format
 
-- Área responsável  
-- Tipo de atividade (experimental ou literatura)  
-- Matriz analisada  
-- Sequência do ensaio  
+Each assay receives a unique standardized identifier composed of subcodes:
 
-### Estrutura do identificador (exemplo)
+```
+<EXPERIMENT>_<AREA>_<MATRIX>_<SEQ>
+```
 
-E001_PRO_M001_nnn
+Example: `E001_PRO_M001_001`
 
+| Part         | Meaning                                          |
+|--------------|--------------------------------------------------|
+| `E001`       | Experiment code                                  |
+| `PRO`        | Responsible area                                 |
+| `M001`       | Matrix / sample code                             |
+| `001`        | Sequential identifier (auto-incremented)         |
 
-Onde:
-- `E001` → Código do experimento  
-- `PRO` → Área responsável  
-- `M001` → Código da matriz/amostra  
-- `nnn` → Identificador sequencial  
+The sequence is generated automatically per `experiment + area + matrix`
+combination, ensuring stable and traceable identifiers.
 
----
+## Core entities
 
-## Core Entities
+- **area_code** — area responsible for the assay
+- **activity_code** — data origin (experimental or literature)
+- **matrix_code** — analyzed matrix identifier
+- **matrix_type** — matrix type
+- **experiment_code** — experiment identifier
 
-O modelo é estruturado em cinco entidades principais:
+## Features
 
-- **area_code** → Área responsável pelo ensaio  
-- **activity_code** → Origem do dado (experimental ou literatura)  
-- **matrix_code** → Identificação da matriz analisada  
-- **matrix_type** → Tipo da matriz  
-- **experiment_code** → Identificação do experimento  
+- Standardization of multi-omics data
+- Full traceability (*data lineage*)
+- Integration of experimental and literature data
+- Output compatible with Machine Learning pipelines
+- Automated information extraction via regex (`decode_id`)
+- Scalable and adaptable to different biological domains
 
-Entidades secundárias são derivadas dessas estruturas para representar:
-- Amostras  
-- Lotes  
-- Sequências experimentais  
+## Getting started
 
----
+### Requirements
 
-## Key Features
+- Python 3.10+
 
-- ✅ Padronização de dados multi-ômicos  
-- ✅ Rastreabilidade completa (*data lineage*)  
-- ✅ Integração entre dados experimentais e literatura  
-- ✅ Estrutura compatível com pipelines de Machine Learning  
-- ✅ Extração automatizada de informações via regex  
-- ✅ Escalável e adaptável a diferentes domínios biológicos  
+### Installation
 
----
+```bash
+git clone https://github.com/deisefs04/DIEF-MO.git
+cd DIEF-MO
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-## Use Case
+### Run the application
 
-O framework foi aplicado em um estudo piloto com dados multi-ômicos reais de matrizes de microrganismos, integrando:
+```bash
+streamlit run app.py
+```
 
-- Dados experimentais  
-- Dados de literatura  
+The interface opens at `http://localhost:8501`.
 
-Os dados foram organizados em formato tabular estruturado, pronto para ingestão em pipelines de IA.
+### Run the tests
 
----
+```bash
+python -m pytest
+```
 
-## Applications
+## Usage
 
-- Integração de dados multi-ômicos  
-- Bioinformática  
-- Machine Learning aplicado à biologia  
-- Data governance em ciência de dados  
-- Estruturação de dados experimentais  
+The application provides four pages:
 
----
+1. **Registration** — register areas, matrices, and experiments (master data).
+2. **Generate ID** — select a registered experiment, area, and matrix to
+   generate and persist a new identifier.
+3. **Batch import** — upload an Excel file (`.xlsx`) containing the columns
+   `experiment_code`, `area_code`, `matrix_code` to generate identifiers in
+   bulk and download the result.
+4. **History** — view all generated identifiers.
+
+### Using the library directly
+
+```python
+from dief_mo import generate_id, decode_id
+
+generate_id("E001", "PRO", "M001", 1)   # 'E001_PRO_M001_001'
+decode_id("E001_PRO_M001_001")          # {'experiment': 'E001', 'area': 'PRO',
+                                        #  'matrix': 'M001', 'seq': 1}
+```
+
+## Project structure
+
+```
+DIEF-MO/
+├── app.py                  # Streamlit interface
+├── dief_mo/
+│   ├── __init__.py
+│   ├── encoder.py          # generate_id / decode_id (core)
+│   └── db.py               # SQLite persistence (master data + assays)
+├── tests/
+│   └── test_encoder.py
+├── requirements.txt
+└── LICENSE
+```
+
+## Use case
+
+The framework was applied in a pilot study with real multi-omics data from
+microorganism matrices, integrating experimental and literature data into a
+structured tabular format ready for ingestion in AI pipelines.
 
 ## Authors
 
-**Deise Ferreira de Souza**  
+- **Deise Ferreira de Souza** — Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
+- **Jorge Kamassury** — Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
 
-  Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)  
-  
-**Jorge Kamassury**
+## License
 
-  Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
-
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
