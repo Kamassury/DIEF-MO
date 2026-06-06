@@ -158,9 +158,7 @@ structured tabular format ready for ingestion in AI pipelines.
 - Optional hosted database for shared, persistent multi-user deployments.
 
 ## 📚 How to cite
-If this work is useful in your research, please cite it. On GitHub you can also
-use the **"Cite this repository"** button (powered by the `CITATION.cff` file in
-the repository root), which exports BibTeX and APA automatically.
+If this work is useful in your research, please cite it:
 
 ```bibtex
 @inproceedings{souza2026diefmo,
