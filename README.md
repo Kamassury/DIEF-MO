@@ -1,5 +1,4 @@
-# DIEF-MO
-
+# 🧬 DIEF-MO
 **A Standardized Data Integration and Encoding Framework for Multi-Omics Data with Lineage Tracking**
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
@@ -16,8 +15,7 @@ experiment down to the individual sample.
 
 🔗 **Live demo:** https://dief-mo-demo.streamlit.app
 
-## Overview
-
+## 🔬 Overview
 Multi-omics data integration is essential for analyzing complex biological
 systems and for Artificial Intelligence (AI) applications. Yet heterogeneity,
 lack of standardization, and missing traceability routinely compromise the
@@ -25,8 +23,7 @@ quality and reproducibility of analyses. DIEF-MO addresses this through a
 structured approach to standardization, encoding, and data lineage, so that
 data is consistent, traceable, and ready for downstream models.
 
-## Key features
-
+## ✨ Key features
 - Standardized, unique identifiers for every assay
 - Controlled vocabularies and code validation, so identifiers stay consistent
 - Full data lineage: experiment → batch → sample → identifier, traceable per ID
@@ -37,16 +34,14 @@ data is consistent, traceable, and ready for downstream models.
 - Automated information extraction via regex (`decode_id`)
 - Scalable and adaptable to different biological domains
 
-## Applications
-
+## 🎯 Applications
 - Multi-omics data integration
 - Bioinformatics
 - Machine learning applied to biology
 - Data governance in data science
 - Structuring of experimental data for reproducible pipelines
 
-## Identifier format
-
+## 🏷️ Identifier format
 Each assay receives a unique standardized identifier composed of subcodes:
 
 ```
@@ -87,8 +82,7 @@ An identifier can be generated directly, from a registered sample, or from a
 registered replicate, in which case the rest of the chain is derived from its
 lineage (`replicate → sample → batch → experiment`, `sample → matrix`).
 
-## Getting started
-
+## 🚀 Getting started
 Requirements: Python 3.10+
 
 ```bash
@@ -101,8 +95,7 @@ streamlit run app.py             # opens at http://localhost:8501
 python -m pytest                 # run the test suite
 ```
 
-## Usage
-
+## ⚙️ Usage
 The application provides eight pages:
 
 1. **Overview**: summary counts and demo data controls.
@@ -131,8 +124,7 @@ decode_id("E001_PRO_M001_001")          # {'experiment': 'E001', 'area': 'PRO',
                                         #  'matrix': 'M001', 'seq': 1}
 ```
 
-## Project structure
-
+## 🗂️ Project structure
 ```
 DIEF-MO/
 ├── app.py                  # Streamlit interface
@@ -148,28 +140,24 @@ DIEF-MO/
 └── LICENSE
 ```
 
-## Standards & FAIR
-
+## 🧩 Standards & FAIR
 DIEF-MO exports an **ISA-Tab-aligned** representation (investigation, study and
 assay files) and a **FAIR-style metadata record** (JSON), available as a single
 downloadable bundle from the *FAIR / ISA-Tab* page. The output follows ISA-Tab
 conventions but is **not** validated against the ISA specification by a certified
 tool; fully validated ISA output via the `isatools` library is on the roadmap.
 
-## Use case
-
+## 💡 Use case
 The framework was applied in a pilot study with real multi-omics data from
 microorganism matrices, integrating experimental and literature data into a
 structured tabular format ready for ingestion in AI pipelines.
 
-## Roadmap
-
+## 🗺️ Roadmap
 - Validated ISA-Tab/ISA-JSON output via the `isatools` library, with ontology
   term sources (OBI, NCBITaxon) and MIAME/MIAPE checklists.
 - Optional hosted database for shared, persistent multi-user deployments.
 
-## How to cite
-
+## 📚 How to cite
 If this work is useful in your research, please cite it:
 
 ```bibtex
@@ -182,19 +170,9 @@ If this work is useful in your research, please cite it:
 }
 ```
 
-## Authors
+## 👥 Authors
+Developed by the DIEF-MO team at the Instituto SENAI de Inovação em Sistemas 
+Embarcados (ISI-SE), Brazil. See the citation below for the full author list.
 
-All authors are affiliated with the Instituto SENAI de Inovação em Sistemas
-Embarcados (ISI-SE), Brazil.
-
-- Deise F. Souza
-- Jorge Kamassury
-- Márcio S. Arantes
-- Paulo A. M. V. Violada
-- Flávio G. O. Barbosa
-- Tatiany A. T. Soratto
-- Emerson W. Danzer
-
-## License
-
+## 📄 License
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
