@@ -11,10 +11,50 @@ from dief_mo import db, isa, vocab
 from dief_mo.datadict import DATA_DICTIONARY
 from dief_mo.encoder import decode_id, validate_code
 
-st.set_page_config(page_title="DIEF-MO Encoder", page_icon="🔬", layout="wide")
+st.set_page_config(page_title="DIEF-MO", page_icon="🧬", layout="wide")
 db.init_db()
 
-st.sidebar.title("🔬 DIEF-MO")
+# --- light visual polish (self-contained, version-robust) ---------------
+st.markdown(
+    """
+    <style>
+      /* hide default Streamlit chrome for an app-like demo */
+      #MainMenu, footer {visibility: hidden;}
+      [data-testid="stHeader"] {background: transparent; height: 0;}
+      .block-container {padding-top: 2.2rem; max-width: 1200px;}
+      /* branded sidebar title */
+      .dief-sidebar-title {color: #FFFFFF; font-family: Archivo, sans-serif;
+          font-weight: 700; font-size: 1.35rem; letter-spacing: .02em; margin: .2rem 0 0;}
+      .dief-sidebar-sub {color: #9FC3E8; font-size: .72rem; text-transform: uppercase;
+          letter-spacing: .14em; margin: 0 0 .4rem;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def page_header(title, subtitle=""):
+    """Consistent branded header for every page."""
+    sub = (f'<p style="margin:.3rem 0 0;color:#5A6B82;font-size:.95rem;">{subtitle}</p>'
+           if subtitle else "")
+    st.markdown(
+        f"""
+        <div style="margin:0 0 1.3rem 0;">
+          <div style="height:4px;width:52px;background:#0090D4;border-radius:2px;margin-bottom:.7rem;"></div>
+          <h1 style="margin:0;font-family:Archivo,sans-serif;color:#0C2D5A;
+              font-size:1.95rem;font-weight:700;line-height:1.1;">{title}</h1>
+          {sub}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+st.sidebar.markdown(
+    '<div class="dief-sidebar-title">🧬 DIEF-MO</div>'
+    '<div class="dief-sidebar-sub">Multi-omics encoding</div>',
+    unsafe_allow_html=True,
+)
 page = st.sidebar.radio(
     "Navigation",
     ["Overview", "Registration", "Generate ID", "Batch import",
@@ -79,21 +119,20 @@ def _save_with_feedback(table, code, label, save_fn):
 
 # ------------------------------------------------------------------- Overview
 if page == "Overview":
-    st.header("DIEF-MO — Overview")
+    page_header("DIEF-MO — Overview")
     st.write(
         "Standardize, encode and trace multi-omics assays. Register core data "
         "(areas, matrices, experiments) and optional lineage (batches, samples), "
         "then generate stable identifiers `EXPERIMENT_AREA_MATRIX_SEQ`."
     )
     c = db.counts()
-    row1 = st.columns(3)
-    row1[0].metric("Areas", c["areas"])
-    row1[1].metric("Matrices", c["matrices"])
-    row1[2].metric("Experiments", c["experiments"])
-    row2 = st.columns(3)
-    row2[0].metric("Batches", c["batches"])
-    row2[1].metric("Samples", c["samples"])
-    row2[2].metric("Generated IDs", c["assays"])
+    cards = [("Areas", c["areas"]), ("Matrices", c["matrices"]),
+             ("Experiments", c["experiments"]), ("Batches", c["batches"]),
+             ("Samples", c["samples"]), ("Generated IDs", c["assays"])]
+    cols = st.columns(3)
+    for i, (label, value) in enumerate(cards):
+        with cols[i % 3].container(border=True):
+            st.metric(label, value)
     if c["areas"] == 0 or c["matrices"] == 0 or c["experiments"] == 0:
         st.info("Start in **Registration** to add at least one area, matrix and experiment.")
 
@@ -109,7 +148,7 @@ if page == "Overview":
 
 # --------------------------------------------------------------- Registration
 elif page == "Registration":
-    st.header("Registration")
+    page_header("Registration")
     st.caption("Core entities define the identifier. Batches and samples add lineage.")
     tabs = st.tabs(["Areas", "Matrices", "Experiments", "Batches", "Samples"])
 
@@ -221,7 +260,7 @@ elif page == "Registration":
 
 # ------------------------------------------------------------------ Generate ID
 elif page == "Generate ID":
-    st.header("Generate a DIEF-MO identifier")
+    page_header("Generate a DIEF-MO identifier")
     mode = st.radio("Mode", ["From a registered sample", "Direct (experiment + area + matrix)"])
 
     areas = db.list_table("areas")
@@ -259,7 +298,7 @@ elif page == "Generate ID":
 
 # --------------------------------------------------------------- Batch import
 elif page == "Batch import":
-    st.header("Batch import (Excel)")
+    page_header("Batch import (Excel)")
     st.caption("The file must contain the columns: experiment_code, area_code, matrix_code")
     file = st.file_uploader("Upload an Excel file (.xlsx)", type=["xlsx"])
     if file:
@@ -288,7 +327,7 @@ elif page == "Batch import":
 
 # ----------------------------------------------------------------- Lineage
 elif page == "Lineage":
-    st.header("Data lineage")
+    page_header("Data lineage")
     assays = db.list_table("assays")
     if not assays:
         st.info("No identifiers generated yet.")
@@ -326,7 +365,7 @@ elif page == "Lineage":
 
 # -------------------------------------------------------------- Data quality
 elif page == "Data quality":
-    st.header("Data quality & AI-readiness")
+    page_header("Data quality & AI-readiness")
     rep = db.quality_report()
 
     cov = rep["sample_coverage"]
@@ -354,7 +393,7 @@ elif page == "Data quality":
 
 # ------------------------------------------------------------- FAIR / ISA-Tab
 elif page == "FAIR / ISA-Tab":
-    st.header("FAIR / ISA-Tab export")
+    page_header("FAIR / ISA-Tab export")
     st.caption(
         "ISA-Tab-aligned tables and a FAIR-style metadata record. This follows "
         "ISA conventions but is not validated by a certified ISA tool — see the "
@@ -400,7 +439,7 @@ elif page == "FAIR / ISA-Tab":
 
 # -------------------------------------------------------------------- History
 elif page == "History":
-    st.header("Generated IDs — full dataset")
+    page_header("Generated IDs — full dataset")
     rows = db.enriched_assays()
     if not rows:
         st.info("No IDs generated yet.")
