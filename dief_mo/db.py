@@ -86,6 +86,23 @@ def delete_row(table, code, db_path=DB_PATH):
         conn.execute(f"DELETE FROM {table} WHERE code = ?", (code.strip(),))
 
 
+_EDITABLE_COLUMNS = {"name", "description", "matrix_type", "activity_code"}
+
+
+def update_fields(table, code, fields, db_path=DB_PATH):
+    """Update editable descriptive fields of a record, preserving its code,
+    structural foreign keys and created_at."""
+    if table not in _KEYED_TABLES:
+        raise ValueError(f"Tabela desconhecida: {table}")
+    cols = [c for c in fields if c in _EDITABLE_COLUMNS]
+    if not cols:
+        return
+    set_clause = ", ".join(f"{c} = ?" for c in cols)
+    values = [(fields[c] or "").strip() for c in cols] + [code.strip()]
+    with get_conn(db_path) as conn:
+        conn.execute(f"UPDATE {table} SET {set_clause} WHERE code = ?", values)
+
+
 def list_table(table, db_path=DB_PATH):
     if table not in _ALLOWED_TABLES:
         raise ValueError(f"Tabela desconhecida: {table}")

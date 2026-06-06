@@ -22,14 +22,47 @@ page = st.sidebar.radio(
 )
 
 
-def _delete_control(table, label):
+_EDIT_FIELDS = {
+    "areas": [("name", "Name", "text"), ("description", "Description", "text")],
+    "matrices": [("name", "Name", "text"), ("matrix_type", "Matrix type", "matrixtype")],
+    "experiments": [("name", "Name", "text"), ("activity_code", "Activity", "activity")],
+    "batches": [("name", "Name", "text")],
+    "samples": [("name", "Name", "text")],
+}
+
+
+def _manage_control(table, label):
+    """Expander to edit (descriptive fields) or delete a registered entry."""
     rows = db.list_table(table)
     if not rows:
         return
-    with st.expander(f"Manage / delete {label}"):
-        target = st.selectbox(
-            f"Select a {label} to delete", [r["code"] for r in rows], key=f"del_{table}")
-        if st.button(f"Delete '{target}'", key=f"delbtn_{table}"):
+    with st.expander(f"Manage {label}s (edit / delete)"):
+        target = st.selectbox(f"Select a {label}", [r["code"] for r in rows], key=f"mng_{table}")
+        record = next(r for r in rows if r["code"] == target)
+        new_vals = {}
+        for field, flabel, kind in _EDIT_FIELDS[table]:
+            cur = record.get(field) or ""
+            if kind == "matrixtype":
+                opts = vocab.MATRIX_TYPES
+                idx = opts.index(cur) if cur in opts else len(opts) - 1
+                sel = st.selectbox(flabel, opts, index=idx, key=f"edt_{table}_{field}")
+                if sel == "Other":
+                    sel = st.text_input("Specify matrix type", value=cur, key=f"edt_{table}_{field}_o")
+                new_vals[field] = sel
+            elif kind == "activity":
+                acts = list(vocab.ACTIVITY_TYPES.keys())
+                idx = acts.index(cur) if cur in acts else 0
+                labels = [f"{c} — {n}" for c, n in vocab.ACTIVITY_TYPES.items()]
+                sel = st.selectbox(flabel, labels, index=idx, key=f"edt_{table}_{field}")
+                new_vals[field] = sel.split(" — ")[0]
+            else:
+                new_vals[field] = st.text_input(flabel, value=cur, key=f"edt_{table}_{field}")
+        c1, c2 = st.columns(2)
+        if c1.button("Update", key=f"upd_{table}"):
+            db.update_fields(table, target, new_vals)
+            st.success(f"{label} '{target}' updated.")
+            st.rerun()
+        if c2.button(f"Delete '{target}'", key=f"delbtn_{table}"):
             db.delete_row(table, target)
             st.rerun()
 
@@ -91,7 +124,7 @@ elif page == "Registration":
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("areas")), use_container_width=True)
-        _delete_control("areas", "area")
+        _manage_control("areas", "area")
 
     # ----- Matrices -----
     with tabs[1]:
@@ -110,7 +143,7 @@ elif page == "Registration":
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("matrices")), use_container_width=True)
-        _delete_control("matrices", "matrix")
+        _manage_control("matrices", "matrix")
 
     # ----- Experiments -----
     with tabs[2]:
@@ -130,7 +163,7 @@ elif page == "Registration":
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("experiments")), use_container_width=True)
-        _delete_control("experiments", "experiment")
+        _manage_control("experiments", "experiment")
 
     # ----- Batches -----
     with tabs[3]:
@@ -151,7 +184,7 @@ elif page == "Registration":
                 except ValueError as e:
                     st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("batches")), use_container_width=True)
-        _delete_control("batches", "batch")
+        _manage_control("batches", "batch")
 
     # ----- Samples -----
     with tabs[4]:
@@ -174,7 +207,7 @@ elif page == "Registration":
                 except ValueError as e:
                     st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("samples")), use_container_width=True)
-        _delete_control("samples", "sample")
+        _manage_control("samples", "sample")
 
 # ------------------------------------------------------------------ Generate ID
 elif page == "Generate ID":
@@ -363,11 +396,27 @@ elif page == "History":
         st.info("No IDs generated yet.")
     else:
         df = pd.DataFrame(rows)
-        st.dataframe(df, use_container_width=True)
+        fcol1, fcol2 = st.columns([2, 1])
+        search = fcol1.text_input("Filter (search across all columns)", "")
+        activities = ["All"] + sorted({r.get("activity_code") for r in rows if r.get("activity_code")})
+        act = fcol2.selectbox("Activity", activities)
+
+        view = df
+        if act != "All":
+            view = view[view["activity_code"] == act]
+        if search:
+            mask = view.apply(
+                lambda r: r.astype(str).str.contains(search, case=False, na=False).any(), axis=1)
+            view = view[mask]
+
+        st.dataframe(view, use_container_width=True)
+        by_activity = df["activity_code"].fillna("(none)").value_counts().to_dict()
+        breakdown = ", ".join(f"{k}: {v}" for k, v in by_activity.items())
+        st.caption(f"Showing {len(view)} of {len(df)} identifiers  |  by activity → {breakdown}")
         st.caption("AI-ready export: one row per identifier with full metadata and lineage.")
         col1, col2 = st.columns(2)
-        col1.download_button("Download CSV", df.to_csv(index=False).encode("utf-8"),
+        col1.download_button("Download CSV", view.to_csv(index=False).encode("utf-8"),
                              file_name="dief_dataset.csv", mime="text/csv")
         buf = io.BytesIO()
-        df.to_excel(buf, index=False)
+        view.to_excel(buf, index=False)
         col2.download_button("Download Excel", buf.getvalue(), file_name="dief_dataset.xlsx")

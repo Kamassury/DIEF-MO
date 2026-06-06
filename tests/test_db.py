@@ -70,3 +70,28 @@ def test_migration_adds_sample_code_to_old_db():
     rows = db.enriched_assays(path)
     assert any(r["dief_id"] == "E001_PRO_M001_001" for r in rows)
     assert rows[0]["sample_code"] is None
+
+
+def test_update_fields_preserves_created_at(temp_db):
+    _seed(temp_db)
+    before = db.get_row("batches", "B001", db_path=temp_db)["created_at"]
+    db.update_fields("batches", "B001", {"name": "Renamed batch"}, db_path=temp_db)
+    after = db.get_row("batches", "B001", db_path=temp_db)
+    assert after["name"] == "Renamed batch"
+    assert after["created_at"] == before  # editing a name must not reset the timestamp
+
+
+def test_update_fields_experiment_activity(temp_db):
+    db.add_experiment("E001", "Pilot", "EXP", db_path=temp_db)
+    db.update_fields("experiments", "E001",
+                     {"name": "Pilot 2", "activity_code": "LIT"}, db_path=temp_db)
+    r = db.get_row("experiments", "E001", db_path=temp_db)
+    assert r["name"] == "Pilot 2" and r["activity_code"] == "LIT"
+
+
+def test_update_fields_ignores_non_editable(temp_db):
+    _seed(temp_db)
+    # attempting to change the code via update_fields must be ignored
+    db.update_fields("areas", "PRO", {"code": "HACK", "name": "Proteomics 2"}, db_path=temp_db)
+    assert db.code_exists("areas", "PRO", db_path=temp_db)
+    assert not db.code_exists("areas", "HACK", db_path=temp_db)

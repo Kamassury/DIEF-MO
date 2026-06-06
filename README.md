@@ -70,6 +70,7 @@ case the experiment and matrix are derived from the sample's lineage
 - Data-quality checks (completeness, orphan references) and a documented data dictionary
 - AI-ready export: one row per identifier with full resolved metadata and lineage (CSV/Excel)
 - ISA-Tab-aligned study/assay tables and a FAIR-style metadata record (downloadable bundle)
+- In-place editing of registered entities and search/activity filtering of the dataset
 - Automated information extraction via regex (`decode_id`)
 - Scalable and adaptable to different biological domains
 
@@ -174,7 +175,6 @@ Planned extensions, aligned with the framework described above:
 
 - Validated ISA-Tab/ISA-JSON output via the `isatools` library, with ontology
   term sources (OBI, NCBITaxon) and MIAME/MIAPE checklists.
-- In-place editing of registered entities and search/filtering across records.
 - Optional hosted database for shared, persistent multi-user deployments.
 
 ## Authors
