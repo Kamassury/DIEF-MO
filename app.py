@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from dief_mo import db, vocab
+from dief_mo.datadict import DATA_DICTIONARY
 from dief_mo.encoder import decode_id, validate_code
 
 st.set_page_config(page_title="DIEF-MO Encoder", page_icon="🔬", layout="wide")
@@ -16,57 +17,68 @@ db.init_db()
 st.sidebar.title("🔬 DIEF-MO")
 page = st.sidebar.radio(
     "Navigation",
-    ["Overview", "Registration", "Generate ID", "Batch import", "History"],
+    ["Overview", "Registration", "Generate ID", "Batch import",
+     "Lineage", "Data quality", "History"],
 )
 
 
 def _delete_control(table, label):
-    """Small expander to delete a registered entry."""
     rows = db.list_table(table)
     if not rows:
         return
     with st.expander(f"Manage / delete {label}"):
         target = st.selectbox(
-            f"Select a {label} to delete", [r["code"] for r in rows], key=f"del_{table}"
-        )
+            f"Select a {label} to delete", [r["code"] for r in rows], key=f"del_{table}")
         if st.button(f"Delete '{target}'", key=f"delbtn_{table}"):
             db.delete_row(table, target)
             st.rerun()
+
+
+def _save_with_feedback(table, code, label, save_fn):
+    """Run a save function with validation feedback. save_fn() does the insert."""
+    try:
+        existed = db.code_exists(table, code)
+        save_fn()
+        st.success(f"{label} '{code}' {'updated' if existed else 'saved'}.")
+    except ValueError as e:
+        st.error(str(e))
 
 
 # ------------------------------------------------------------------- Overview
 if page == "Overview":
     st.header("DIEF-MO — Overview")
     st.write(
-        "Standardize, encode and trace multi-omics assays. Register your master "
-        "data once, then generate stable identifiers in the format "
-        "`EXPERIMENT_AREA_MATRIX_SEQ` (e.g. `E001_PRO_M001_001`)."
+        "Standardize, encode and trace multi-omics assays. Register core data "
+        "(areas, matrices, experiments) and optional lineage (batches, samples), "
+        "then generate stable identifiers `EXPERIMENT_AREA_MATRIX_SEQ`."
     )
     c = db.counts()
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Areas", c["areas"])
-    col2.metric("Matrices", c["matrices"])
-    col3.metric("Experiments", c["experiments"])
-    col4.metric("Generated IDs", c["assays"])
+    row1 = st.columns(3)
+    row1[0].metric("Areas", c["areas"])
+    row1[1].metric("Matrices", c["matrices"])
+    row1[2].metric("Experiments", c["experiments"])
+    row2 = st.columns(3)
+    row2[0].metric("Batches", c["batches"])
+    row2[1].metric("Samples", c["samples"])
+    row2[2].metric("Generated IDs", c["assays"])
     if c["areas"] == 0 or c["matrices"] == 0 or c["experiments"] == 0:
         st.info("Start in **Registration** to add at least one area, matrix and experiment.")
 
 # --------------------------------------------------------------- Registration
 elif page == "Registration":
     st.header("Registration")
-    tab_area, tab_matrix, tab_exp = st.tabs(["Areas", "Matrices", "Experiments"])
+    st.caption("Core entities define the identifier. Batches and samples add lineage.")
+    tabs = st.tabs(["Areas", "Matrices", "Experiments", "Batches", "Samples"])
 
     # ----- Areas -----
-    with tab_area:
-        st.caption("Pick a suggested area or choose 'Custom...' to define your own.")
-        options = [f"{code} — {name}" for code, name in vocab.SUGGESTED_AREAS.items()]
+    with tabs[0]:
+        options = [f"{c} — {n}" for c, n in vocab.SUGGESTED_AREAS.items()]
         choice = st.selectbox("Area", options + ["Custom..."], key="area_choice")
         if choice == "Custom...":
             code = st.text_input("Area code (letters/numbers only, e.g. PRO)", key="area_code")
             name = st.text_input("Name", key="area_name")
         else:
-            code = choice.split(" — ")[0]
-            name = choice.split(" — ", 1)[1]
+            code, name = choice.split(" — ", 1)
             st.text_input("Area code", value=code, disabled=True)
             st.text_input("Name", value=name, disabled=True)
         desc = st.text_input("Description (optional)", key="area_desc")
@@ -75,16 +87,14 @@ elif page == "Registration":
                 code = validate_code(code, "area code")
                 if not name.strip():
                     raise ValueError("Name is required.")
-                existed = db.code_exists("areas", code)
-                db.add_area(code, name, desc)
-                st.success(f"Area '{code}' {'updated' if existed else 'saved'}.")
+                _save_with_feedback("areas", code, "Area", lambda: db.add_area(code, name, desc))
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("areas")), use_container_width=True)
         _delete_control("areas", "area")
 
     # ----- Matrices -----
-    with tab_matrix:
+    with tabs[1]:
         code = st.text_input("Matrix code (letters/numbers only, e.g. M001)", key="mx_code")
         name = st.text_input("Name", key="mx_name")
         mtype = st.selectbox("Matrix type", vocab.MATRIX_TYPES, key="mx_type")
@@ -95,55 +105,114 @@ elif page == "Registration":
                 code = validate_code(code, "matrix code")
                 if not name.strip():
                     raise ValueError("Name is required.")
-                existed = db.code_exists("matrices", code)
-                db.add_matrix(code, name, mtype)
-                st.success(f"Matrix '{code}' {'updated' if existed else 'saved'}.")
+                _save_with_feedback("matrices", code, "Matrix",
+                                    lambda: db.add_matrix(code, name, mtype))
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("matrices")), use_container_width=True)
         _delete_control("matrices", "matrix")
 
     # ----- Experiments -----
-    with tab_exp:
+    with tabs[2]:
         code = st.text_input("Experiment code (letters/numbers only, e.g. E001)", key="ex_code")
         name = st.text_input("Name", key="ex_name")
         activity_label = st.selectbox(
-            "Activity type",
-            [f"{c} — {n}" for c, n in vocab.ACTIVITY_TYPES.items()],
-            key="ex_activity",
-        )
+            "Activity type", [f"{c} — {n}" for c, n in vocab.ACTIVITY_TYPES.items()],
+            key="ex_activity")
         activity = activity_label.split(" — ")[0]
         if st.button("Save experiment"):
             try:
                 code = validate_code(code, "experiment code")
                 if not name.strip():
                     raise ValueError("Name is required.")
-                existed = db.code_exists("experiments", code)
-                db.add_experiment(code, name, activity)
-                st.success(f"Experiment '{code}' {'updated' if existed else 'saved'}.")
+                _save_with_feedback("experiments", code, "Experiment",
+                                    lambda: db.add_experiment(code, name, activity))
             except ValueError as e:
                 st.error(str(e))
         st.dataframe(pd.DataFrame(db.list_table("experiments")), use_container_width=True)
         _delete_control("experiments", "experiment")
 
+    # ----- Batches -----
+    with tabs[3]:
+        experiments = db.list_table("experiments")
+        if not experiments:
+            st.warning("Register an experiment first.")
+        else:
+            code = st.text_input("Batch code (letters/numbers only, e.g. B001)", key="bt_code")
+            name = st.text_input("Name", key="bt_name")
+            exp = st.selectbox("Experiment", [e["code"] for e in experiments], key="bt_exp")
+            if st.button("Save batch"):
+                try:
+                    code = validate_code(code, "batch code")
+                    if not name.strip():
+                        raise ValueError("Name is required.")
+                    _save_with_feedback("batches", code, "Batch",
+                                        lambda: db.add_batch(code, exp, name))
+                except ValueError as e:
+                    st.error(str(e))
+        st.dataframe(pd.DataFrame(db.list_table("batches")), use_container_width=True)
+        _delete_control("batches", "batch")
+
+    # ----- Samples -----
+    with tabs[4]:
+        batches = db.list_table("batches")
+        matrices = db.list_table("matrices")
+        if not (batches and matrices):
+            st.warning("Register a batch and a matrix first.")
+        else:
+            code = st.text_input("Sample code (letters/numbers only, e.g. S001)", key="sp_code")
+            name = st.text_input("Name", key="sp_name")
+            batch = st.selectbox("Batch", [b["code"] for b in batches], key="sp_batch")
+            matrix = st.selectbox("Matrix", [m["code"] for m in matrices], key="sp_matrix")
+            if st.button("Save sample"):
+                try:
+                    code = validate_code(code, "sample code")
+                    if not name.strip():
+                        raise ValueError("Name is required.")
+                    _save_with_feedback("samples", code, "Sample",
+                                        lambda: db.add_sample(code, batch, matrix, name))
+                except ValueError as e:
+                    st.error(str(e))
+        st.dataframe(pd.DataFrame(db.list_table("samples")), use_container_width=True)
+        _delete_control("samples", "sample")
+
 # ------------------------------------------------------------------ Generate ID
 elif page == "Generate ID":
     st.header("Generate a DIEF-MO identifier")
-    experiments = db.list_table("experiments")
-    areas = db.list_table("areas")
-    matrices = db.list_table("matrices")
+    mode = st.radio("Mode", ["From a registered sample", "Direct (experiment + area + matrix)"])
 
-    if not (experiments and areas and matrices):
-        st.warning("Register at least one experiment, one area and one matrix first.")
+    areas = db.list_table("areas")
+
+    if mode == "From a registered sample":
+        samples = db.list_table("samples")
+        if not (samples and areas):
+            st.warning("Register at least one sample and one area first.")
+        else:
+            sample = st.selectbox("Sample", [s["code"] for s in samples])
+            area = st.selectbox("Area", [a["code"] for a in areas])
+            s = db.get_row("samples", sample)
+            b = db.get_row("batches", s["batch_code"]) if s else None
+            if b:
+                st.caption(f"Derived lineage → experiment **{b['experiment_code']}**, "
+                           f"matrix **{s['matrix_code']}**, batch **{s['batch_code']}**")
+            if st.button("Generate ID"):
+                dief_id = db.create_assay_from_sample(sample, area)
+                st.success(f"Generated ID: {dief_id}")
+                st.json(decode_id(dief_id))
     else:
-        col1, col2, col3 = st.columns(3)
-        exp = col1.selectbox("Experiment", [e["code"] for e in experiments])
-        area = col2.selectbox("Area", [a["code"] for a in areas])
-        matrix = col3.selectbox("Matrix", [m["code"] for m in matrices])
-        if st.button("Generate ID"):
-            dief_id = db.create_assay(exp, area, matrix)
-            st.success(f"Generated ID: {dief_id}")
-            st.json(decode_id(dief_id))
+        experiments = db.list_table("experiments")
+        matrices = db.list_table("matrices")
+        if not (experiments and areas and matrices):
+            st.warning("Register at least one experiment, one area and one matrix first.")
+        else:
+            col1, col2, col3 = st.columns(3)
+            exp = col1.selectbox("Experiment", [e["code"] for e in experiments])
+            area = col2.selectbox("Area", [a["code"] for a in areas])
+            matrix = col3.selectbox("Matrix", [m["code"] for m in matrices])
+            if st.button("Generate ID"):
+                dief_id = db.create_assay(exp, area, matrix)
+                st.success(f"Generated ID: {dief_id}")
+                st.json(decode_id(dief_id))
 
 # --------------------------------------------------------------- Batch import
 elif page == "Batch import":
@@ -161,9 +230,8 @@ elif page == "Batch import":
             results, errors = [], []
             for idx, r in df.iterrows():
                 try:
-                    results.append(
-                        db.create_assay(r["experiment_code"], r["area_code"], r["matrix_code"])
-                    )
+                    results.append(db.create_assay(
+                        r["experiment_code"], r["area_code"], r["matrix_code"]))
                 except ValueError as e:
                     results.append(None)
                     errors.append(f"Row {idx + 1}: {e}")
@@ -173,9 +241,73 @@ elif page == "Batch import":
                 st.warning("Some rows could not be processed:\n\n" + "\n".join(errors))
             buf = io.BytesIO()
             df.to_excel(buf, index=False)
-            st.download_button(
-                "Download result", buf.getvalue(), file_name="dief_output.xlsx"
-            )
+            st.download_button("Download result", buf.getvalue(), file_name="dief_output.xlsx")
+
+# ----------------------------------------------------------------- Lineage
+elif page == "Lineage":
+    st.header("Data lineage")
+    assays = db.list_table("assays")
+    if not assays:
+        st.info("No identifiers generated yet.")
+    else:
+        chosen = st.selectbox("Select an identifier", [a["dief_id"] for a in assays])
+        info = db.get_lineage(chosen)
+        if info:
+            chain = f"**{info['dief_id']}**"
+            if info.get("sample_code"):
+                chain += (f"  ←  sample **{info['sample_code']}**"
+                          f"  ←  batch **{info.get('batch_code')}**"
+                          f"  ←  experiment **{info['experiment_code']}**")
+            else:
+                chain += f"  ←  experiment **{info['experiment_code']}** (direct, no sample)"
+            st.markdown(chain)
+            st.markdown(f"matrix **{info['matrix_code']}** ({info.get('matrix_type') or '—'})  |  "
+                        f"area **{info['area_code']}**  |  activity **{info.get('activity_code') or '—'}**")
+            st.json(info)
+    st.subheader("Experiment tree")
+    tree = db.experiment_tree()
+    if not any(node["batches"] for node in tree):
+        st.caption("Register batches and samples to populate the lineage tree.")
+    for node in tree:
+        e = node["experiment"]
+        with st.expander(f"{e['code']} — {e['name']}"):
+            if not node["batches"]:
+                st.caption("No batches.")
+            for bn in node["batches"]:
+                b = bn["batch"]
+                st.markdown(f"**Batch {b['code']}** — {b['name']}")
+                for sn in bn["samples"]:
+                    s = sn["sample"]
+                    ids = ", ".join(a["dief_id"] for a in sn["assays"]) or "no IDs yet"
+                    st.markdown(f"- Sample {s['code']} ({s['matrix_code']}): {ids}")
+
+# -------------------------------------------------------------- Data quality
+elif page == "Data quality":
+    st.header("Data quality & AI-readiness")
+    rep = db.quality_report()
+
+    cov = rep["sample_coverage"]
+    st.metric("Sample coverage (samples with at least one ID)",
+              "—" if cov is None else f"{cov * 100:.0f}%")
+
+    checks = [
+        ("Experiments without batches", rep["experiments_without_batches"]),
+        ("Batches without samples", rep["batches_without_samples"]),
+        ("Samples without identifiers", rep["samples_without_assays"]),
+        ("Orphan batches (missing experiment)", rep["orphan_batches"]),
+        ("Orphan samples (missing batch/matrix)", rep["orphan_samples"]),
+        ("Identifiers generated without a sample link", rep["direct_assays"]),
+    ]
+    for label, items in checks:
+        if items:
+            st.warning(f"{label}: {', '.join(items)}")
+        else:
+            st.success(f"{label}: none")
+
+    st.subheader("Data dictionary (exported dataset)")
+    st.dataframe(
+        pd.DataFrame(DATA_DICTIONARY, columns=["column", "description", "type"]),
+        use_container_width=True)
 
 # -------------------------------------------------------------------- History
 elif page == "History":
@@ -186,14 +318,10 @@ elif page == "History":
     else:
         df = pd.DataFrame(rows)
         st.dataframe(df, use_container_width=True)
-        st.caption("AI-ready export: one row per identifier with full metadata.")
+        st.caption("AI-ready export: one row per identifier with full metadata and lineage.")
         col1, col2 = st.columns(2)
-        col1.download_button(
-            "Download CSV", df.to_csv(index=False).encode("utf-8"),
-            file_name="dief_dataset.csv", mime="text/csv",
-        )
+        col1.download_button("Download CSV", df.to_csv(index=False).encode("utf-8"),
+                             file_name="dief_dataset.csv", mime="text/csv")
         buf = io.BytesIO()
         df.to_excel(buf, index=False)
-        col2.download_button(
-            "Download Excel", buf.getvalue(), file_name="dief_dataset.xlsx"
-        )
+        col2.download_button("Download Excel", buf.getvalue(), file_name="dief_dataset.xlsx")

@@ -50,12 +50,25 @@ combination, ensuring stable and traceable identifiers.
 - **matrix_type** — matrix type
 - **experiment_code** — experiment identifier
 
+### Secondary entities (lineage)
+
+Derived from the core entities to capture provenance:
+
+- **batch** — a batch of work belonging to an experiment
+- **sample** — a sample belonging to a batch and referencing a matrix
+
+An identifier can be generated directly or from a registered sample, in which
+case the experiment and matrix are derived from the sample's lineage
+(`sample → batch → experiment`, `sample → matrix`).
+
 ## Features
 
 - Standardization of multi-omics data
-- Full traceability (*data lineage*)
+- Controlled vocabularies and code validation, so identifiers stay consistent
+- Full data lineage: experiment → batch → sample → identifier, traceable per ID
 - Integration of experimental and literature data
-- Output compatible with Machine Learning pipelines
+- Data-quality checks (completeness, orphan references) and a documented data dictionary
+- AI-ready export: one row per identifier with full resolved metadata and lineage (CSV/Excel)
 - Automated information extraction via regex (`decode_id`)
 - Scalable and adaptable to different biological domains
 
@@ -91,15 +104,22 @@ python -m pytest
 
 ## Usage
 
-The application provides four pages:
+The application provides seven pages:
 
-1. **Registration** — register areas, matrices, and experiments (master data).
-2. **Generate ID** — select a registered experiment, area, and matrix to
-   generate and persist a new identifier.
-3. **Batch import** — upload an Excel file (`.xlsx`) containing the columns
-   `experiment_code`, `area_code`, `matrix_code` to generate identifiers in
-   bulk and download the result.
-4. **History** — view all generated identifiers.
+1. **Overview** — summary counts of registered data and generated identifiers.
+2. **Registration** — register core data (areas, matrices, experiments) and
+   lineage entities (batches, samples), using controlled vocabularies and
+   validated codes.
+3. **Generate ID** — generate an identifier from a registered sample (with
+   derived lineage) or directly from experiment + area + matrix.
+4. **Batch import** — upload an Excel file (`.xlsx`) with the columns
+   `experiment_code`, `area_code`, `matrix_code` to generate identifiers in bulk.
+5. **Lineage** — trace any identifier back through sample, batch and experiment,
+   and browse the full experiment tree.
+6. **Data quality** — completeness checks, orphan-reference detection and the
+   data dictionary for the exported dataset.
+7. **History** — browse all generated identifiers and export the AI-ready
+   dataset (CSV/Excel).
 
 ### Using the library directly
 
@@ -118,10 +138,13 @@ DIEF-MO/
 ├── app.py                  # Streamlit interface
 ├── dief_mo/
 │   ├── __init__.py
-│   ├── encoder.py          # generate_id / decode_id (core)
-│   └── db.py               # SQLite persistence (master data + assays)
+│   ├── encoder.py          # generate_id / decode_id / validate_code (core)
+│   ├── vocab.py            # controlled vocabularies (edit to match your catalog)
+│   ├── datadict.py         # data dictionary for the exported dataset
+│   └── db.py               # SQLite persistence (entities, lineage, quality)
 ├── tests/
-│   └── test_encoder.py
+│   ├── test_encoder.py
+│   └── test_db.py
 ├── requirements.txt
 └── LICENSE
 ```
@@ -131,6 +154,15 @@ DIEF-MO/
 The framework was applied in a pilot study with real multi-omics data from
 microorganism matrices, integrating experimental and literature data into a
 structured tabular format ready for ingestion in AI pipelines.
+
+## Roadmap
+
+Planned extensions, aligned with the framework described above:
+
+- Alignment with metadata standards (MIAME, MIAPE, ISA-Tab) and the FAIR
+  principles for fully AI-ready outputs.
+- In-place editing of registered entities and search/filtering across records.
+- Optional hosted database for shared, persistent multi-user deployments.
 
 ## Authors
 
