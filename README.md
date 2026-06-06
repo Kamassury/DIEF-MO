@@ -3,7 +3,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-26%20passing-2E7D32)
+[![tests](https://github.com/deisefs04/DIEF-MO/actions/workflows/tests.yml/badge.svg)](https://github.com/deisefs04/DIEF-MO/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/License-MIT-0090D4)
 [![Live demo](https://img.shields.io/badge/Live%20demo-online-0C2D5A)](https://dief-mo-demo.streamlit.app)
 
