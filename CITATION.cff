@@ -1,0 +1,77 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "DIEF-MO: A Standardized Data Integration and Encoding Framework for Multi-Omics Data with Lineage Tracking"
+abstract: >-
+  DIEF-MO (Data Integration and Encoding Framework for Multi-Omics) is a
+  standardized framework that combines data encoding, unique identifiers, and
+  lineage tracking to produce traceable, interoperable, and AI-ready multi-omics
+  datasets.
+type: software
+version: "0.1.0"
+date-released: "2026-06-06"
+license: MIT
+repository-code: "https://github.com/deisefs04/DIEF-MO"
+url: "https://github.com/deisefs04/DIEF-MO"
+keywords:
+  - multi-omics
+  - bioinformatics
+  - data integration
+  - data lineage
+  - unique identifiers
+  - FAIR data
+  - reproducibility
+  - machine learning
+authors:
+  - given-names: "Deise F."
+    family-names: Souza
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: Jorge
+    family-names: Kamassury
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: "Márcio S."
+    family-names: Arantes
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: "Paulo A. M. V."
+    family-names: Violada
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: "Flávio G. O."
+    family-names: Barbosa
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: "Tatiany A. T."
+    family-names: Soratto
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+  - given-names: "Emerson W."
+    family-names: Danzer
+    affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+preferred-citation:
+  type: conference-paper
+  title: "DIEF-MO: A Standardized Data Integration and Encoding Framework for Multi-Omics Data with Lineage Tracking"
+  year: 2026
+  collection-title: "Proceedings of the X-Meeting 2026 (AB3C)"
+  conference:
+    name: "X-Meeting 2026 (AB3C)"
+    city: "Bento Gonçalves"
+    region: "Rio Grande do Sul"
+    country: BR
+  authors:
+    - given-names: "Deise F."
+      family-names: Souza
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: Jorge
+      family-names: Kamassury
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: "Márcio S."
+      family-names: Arantes
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: "Paulo A. M. V."
+      family-names: Violada
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: "Flávio G. O."
+      family-names: Barbosa
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: "Tatiany A. T."
+      family-names: Soratto
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
+    - given-names: "Emerson W."
+      family-names: Danzer
+      affiliation: "Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE), Brazil"
