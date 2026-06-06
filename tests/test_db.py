@@ -95,3 +95,24 @@ def test_update_fields_ignores_non_editable(temp_db):
     db.update_fields("areas", "PRO", {"code": "HACK", "name": "Proteomics 2"}, db_path=temp_db)
     assert db.code_exists("areas", "PRO", db_path=temp_db)
     assert not db.code_exists("areas", "HACK", db_path=temp_db)
+
+
+def test_seed_demo_populates_and_is_idempotent(temp_db):
+    db.seed_demo(db_path=temp_db)
+    c = db.counts(db_path=temp_db)
+    assert c == {"areas": 2, "matrices": 2, "experiments": 2,
+                 "batches": 2, "samples": 3, "assays": 4}
+    # running again must reset to the same state (not accumulate)
+    db.seed_demo(db_path=temp_db)
+    assert db.counts(db_path=temp_db) == c
+    # one direct (sample-less) assay should be present for the quality demo
+    rep = db.quality_report(db_path=temp_db)
+    assert len(rep["direct_assays"]) == 1
+    assert rep["sample_coverage"] == 1.0
+
+
+def test_clear_all_empties_everything(temp_db):
+    db.seed_demo(db_path=temp_db)
+    db.clear_all(db_path=temp_db)
+    assert db.counts(db_path=temp_db) == {"areas": 0, "matrices": 0, "experiments": 0,
+                                          "batches": 0, "samples": 0, "assays": 0}

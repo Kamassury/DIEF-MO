@@ -97,6 +97,16 @@ if page == "Overview":
     if c["areas"] == 0 or c["matrices"] == 0 or c["experiments"] == 0:
         st.info("Start in **Registration** to add at least one area, matrix and experiment.")
 
+    st.divider()
+    st.caption("Demo controls")
+    colA, colB = st.columns(2)
+    if colA.button("Load example data"):
+        db.seed_demo()
+        st.rerun()
+    if colB.button("Clear all data"):
+        db.clear_all()
+        st.rerun()
+
 # --------------------------------------------------------------- Registration
 elif page == "Registration":
     st.header("Registration")

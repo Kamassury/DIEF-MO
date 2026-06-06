@@ -269,3 +269,32 @@ def quality_report(db_path=DB_PATH):
         "direct_assays": sorted(a["dief_id"] for a in assays if not a.get("sample_code")),
         "sample_coverage": (samples_with_assay_count / len(samples)) if samples else None,
     }
+
+
+# --- demo helpers --------------------------------------------------------
+def clear_all(db_path=DB_PATH):
+    """Delete every record from all tables (does not drop the schema)."""
+    with get_conn(db_path) as conn:
+        for t in ("assays", "samples", "batches", "experiments", "matrices", "areas"):
+            conn.execute(f"DELETE FROM {t}")
+
+
+def seed_demo(db_path=DB_PATH):
+    """Reset the database to a small, illustrative example dataset that
+    exercises every page (lineage, quality, ISA export, activity filter)."""
+    clear_all(db_path)
+    add_area("PRO", "Proteomics", "Protein-level analyses", db_path=db_path)
+    add_area("GEN", "Genomics", "DNA-level analyses", db_path=db_path)
+    add_matrix("M001", "E. coli culture", "Bacterial culture", db_path=db_path)
+    add_matrix("M002", "Yeast culture", "Fungal culture", db_path=db_path)
+    add_experiment("E001", "Pilot proteomics study", "EXP", db_path=db_path)
+    add_experiment("E002", "Literature survey", "LIT", db_path=db_path)
+    add_batch("B001", "E001", "First experimental batch", db_path=db_path)
+    add_batch("B002", "E002", "Literature-derived batch", db_path=db_path)
+    add_sample("S001", "B001", "M001", "Sample 1 - E. coli", db_path=db_path)
+    add_sample("S002", "B001", "M002", "Sample 2 - Yeast", db_path=db_path)
+    add_sample("S003", "B002", "M001", "Sample 3 - literature E. coli", db_path=db_path)
+    create_assay_from_sample("S001", "PRO", db_path=db_path)
+    create_assay_from_sample("S002", "GEN", db_path=db_path)
+    create_assay_from_sample("S003", "PRO", db_path=db_path)
+    create_assay("E001", "PRO", "M001", db_path=db_path)  # a direct ID (no sample)
