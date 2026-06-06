@@ -44,18 +44,18 @@ combination, ensuring stable and traceable identifiers.
 
 ## Core entities
 
-- **area_code** — area responsible for the assay
-- **activity_code** — data origin (experimental or literature)
-- **matrix_code** — analyzed matrix identifier
-- **matrix_type** — matrix type
-- **experiment_code** — experiment identifier
+- **area_code**: area responsible for the assay
+- **activity_code**: data origin (experimental or literature)
+- **matrix_code**: analyzed matrix identifier
+- **matrix_type**: matrix type
+- **experiment_code**: experiment identifier
 
 ### Secondary entities (lineage)
 
 Derived from the core entities to capture provenance:
 
-- **batch** — a batch of work belonging to an experiment
-- **sample** — a sample belonging to a batch and referencing a matrix
+- **batch**: a batch of work belonging to an experiment
+- **sample**: a sample belonging to a batch and referencing a matrix
 
 An identifier can be generated directly or from a registered sample, in which
 case the experiment and matrix are derived from the sample's lineage
@@ -108,21 +108,21 @@ python -m pytest
 
 The application provides eight pages:
 
-1. **Overview** — summary counts of registered data and generated identifiers.
-2. **Registration** — register core data (areas, matrices, experiments) and
+1. **Overview**: summary counts of registered data and generated identifiers.
+2. **Registration**: register core data (areas, matrices, experiments) and
    lineage entities (batches, samples), using controlled vocabularies and
    validated codes.
-3. **Generate ID** — generate an identifier from a registered sample (with
+3. **Generate ID**: generate an identifier from a registered sample (with
    derived lineage) or directly from experiment + area + matrix.
-4. **Batch import** — upload an Excel file (`.xlsx`) with the columns
+4. **Batch import**: upload an Excel file (`.xlsx`) with the columns
    `experiment_code`, `area_code`, `matrix_code` to generate identifiers in bulk.
-5. **Lineage** — trace any identifier back through sample, batch and experiment,
+5. **Lineage**: trace any identifier back through sample, batch and experiment,
    and browse the full experiment tree.
-6. **Data quality** — completeness checks, orphan-reference detection and the
+6. **Data quality**: completeness checks, orphan-reference detection and the
    data dictionary for the exported dataset.
-7. **FAIR / ISA-Tab** — ISA-aligned study/assay tables, a FAIR metadata record,
+7. **FAIR / ISA-Tab**: ISA-aligned study/assay tables, a FAIR metadata record,
    and a downloadable bundle (investigation, study, assay, dataset, metadata).
-8. **History** — browse all generated identifiers and export the AI-ready
+8. **History**: browse all generated identifiers and export the AI-ready
    dataset (CSV/Excel).
 
 ### Using the library directly
@@ -179,8 +179,8 @@ Planned extensions, aligned with the framework described above:
 
 ## Authors
 
-- **Deise Ferreira de Souza** — Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
-- **Jorge Kamassury** — Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
+- **Deise Ferreira de Souza**: Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
+- **Jorge Kamassury**: Instituto SENAI de Inovação em Sistemas Embarcados (ISI-SE)
 
 ## License
 

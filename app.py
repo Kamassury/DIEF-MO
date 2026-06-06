@@ -92,9 +92,9 @@ def _manage_control(table, label):
             elif kind == "activity":
                 acts = list(vocab.ACTIVITY_TYPES.keys())
                 idx = acts.index(cur) if cur in acts else 0
-                labels = [f"{c} — {n}" for c, n in vocab.ACTIVITY_TYPES.items()]
+                labels = [f"{c} · {n}" for c, n in vocab.ACTIVITY_TYPES.items()]
                 sel = st.selectbox(flabel, labels, index=idx, key=f"edt_{table}_{field}")
-                new_vals[field] = sel.split(" — ")[0]
+                new_vals[field] = sel.split(" · ")[0]
             else:
                 new_vals[field] = st.text_input(flabel, value=cur, key=f"edt_{table}_{field}")
         c1, c2 = st.columns(2)
@@ -119,7 +119,7 @@ def _save_with_feedback(table, code, label, save_fn):
 
 # ------------------------------------------------------------------- Overview
 if page == "Overview":
-    page_header("DIEF-MO — Overview")
+    page_header("Overview")
     st.write(
         "Standardize, encode and trace multi-omics assays. Register core data "
         "(areas, matrices, experiments) and optional lineage (batches, samples), "
@@ -154,13 +154,13 @@ elif page == "Registration":
 
     # ----- Areas -----
     with tabs[0]:
-        options = [f"{c} — {n}" for c, n in vocab.SUGGESTED_AREAS.items()]
+        options = [f"{c} · {n}" for c, n in vocab.SUGGESTED_AREAS.items()]
         choice = st.selectbox("Area", options + ["Custom..."], key="area_choice")
         if choice == "Custom...":
             code = st.text_input("Area code (letters/numbers only, e.g. PRO)", key="area_code")
             name = st.text_input("Name", key="area_name")
         else:
-            code, name = choice.split(" — ", 1)
+            code, name = choice.split(" · ", 1)
             st.text_input("Area code", value=code, disabled=True)
             st.text_input("Name", value=name, disabled=True)
         desc = st.text_input("Description (optional)", key="area_desc")
@@ -199,9 +199,9 @@ elif page == "Registration":
         code = st.text_input("Experiment code (letters/numbers only, e.g. E001)", key="ex_code")
         name = st.text_input("Name", key="ex_name")
         activity_label = st.selectbox(
-            "Activity type", [f"{c} — {n}" for c, n in vocab.ACTIVITY_TYPES.items()],
+            "Activity type", [f"{c} · {n}" for c, n in vocab.ACTIVITY_TYPES.items()],
             key="ex_activity")
-        activity = activity_label.split(" — ")[0]
+        activity = activity_label.split(" · ")[0]
         if st.button("Save experiment"):
             try:
                 code = validate_code(code, "experiment code")
@@ -343,8 +343,8 @@ elif page == "Lineage":
             else:
                 chain += f"  ←  experiment **{info['experiment_code']}** (direct, no sample)"
             st.markdown(chain)
-            st.markdown(f"matrix **{info['matrix_code']}** ({info.get('matrix_type') or '—'})  |  "
-                        f"area **{info['area_code']}**  |  activity **{info.get('activity_code') or '—'}**")
+            st.markdown(f"matrix **{info['matrix_code']}** ({info.get('matrix_type') or '-'})  |  "
+                        f"area **{info['area_code']}**  |  activity **{info.get('activity_code') or '-'}**")
             st.json(info)
     st.subheader("Experiment tree")
     tree = db.experiment_tree()
@@ -352,12 +352,12 @@ elif page == "Lineage":
         st.caption("Register batches and samples to populate the lineage tree.")
     for node in tree:
         e = node["experiment"]
-        with st.expander(f"{e['code']} — {e['name']}"):
+        with st.expander(f"{e['code']} · {e['name']}"):
             if not node["batches"]:
                 st.caption("No batches.")
             for bn in node["batches"]:
                 b = bn["batch"]
-                st.markdown(f"**Batch {b['code']}** — {b['name']}")
+                st.markdown(f"**Batch {b['code']}** · {b['name']}")
                 for sn in bn["samples"]:
                     s = sn["sample"]
                     ids = ", ".join(a["dief_id"] for a in sn["assays"]) or "no IDs yet"
@@ -370,7 +370,7 @@ elif page == "Data quality":
 
     cov = rep["sample_coverage"]
     st.metric("Sample coverage (samples with at least one ID)",
-              "—" if cov is None else f"{cov * 100:.0f}%")
+              "-" if cov is None else f"{cov * 100:.0f}%")
 
     checks = [
         ("Experiments without batches", rep["experiments_without_batches"]),
@@ -396,7 +396,7 @@ elif page == "FAIR / ISA-Tab":
     page_header("FAIR / ISA-Tab export")
     st.caption(
         "ISA-Tab-aligned tables and a FAIR-style metadata record. This follows "
-        "ISA conventions but is not validated by a certified ISA tool — see the "
+        "ISA conventions but is not validated by a certified ISA tool; see the "
         "roadmap for fully validated output via isatools."
     )
 
@@ -439,7 +439,7 @@ elif page == "FAIR / ISA-Tab":
 
 # -------------------------------------------------------------------- History
 elif page == "History":
-    page_header("Generated IDs — full dataset")
+    page_header("Generated IDs")
     rows = db.enriched_assays()
     if not rows:
         st.info("No IDs generated yet.")
