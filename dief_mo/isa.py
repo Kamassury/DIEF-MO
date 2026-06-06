@@ -53,6 +53,7 @@ def assay_table(db_path=db.DB_PATH):
             continue
         rows.append({
             "Sample Name": a["sample_code"],
+            "Comment[Replicate]": a.get("replicate_code") or "",
             "Protocol REF": "data acquisition",
             "Comment[Measurement Area]": a.get("area_name") or a["area_code"],
             "Assay Name": a["dief_id"],

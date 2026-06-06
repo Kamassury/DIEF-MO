@@ -33,6 +33,42 @@ def test_generate_from_sample_derives_lineage(temp_db):
     assert info["matrix_code"] == "M001"
 
 
+def test_generate_from_replicate_derives_full_chain(temp_db):
+    _seed(temp_db)
+    db.add_replicate("R001", "S001", "Replicate 1", db_path=temp_db)
+    dief_id = db.create_assay_from_replicate("R001", "PRO", db_path=temp_db)
+    assert dief_id == "E001_PRO_M001_001"
+    info = db.get_lineage(dief_id, db_path=temp_db)
+    assert info["replicate_code"] == "R001"
+    assert info["sample_code"] == "S001"
+    assert info["batch_code"] == "B001"
+    assert info["experiment_code"] == "E001"
+    assert info["matrix_code"] == "M001"
+
+
+def test_replicate_requires_existing_sample(temp_db):
+    _seed(temp_db)
+    with pytest.raises(ValueError):
+        db.add_replicate("R001", "S999", "Bad replicate", db_path=temp_db)
+
+
+def test_migration_adds_replicate_code_to_old_db():
+    import sqlite3
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    con = sqlite3.connect(path)
+    con.execute(
+        "CREATE TABLE assays (dief_id TEXT PRIMARY KEY, experiment_code TEXT, "
+        "area_code TEXT, matrix_code TEXT, seq INTEGER, created_at TEXT)")
+    con.execute("INSERT INTO assays VALUES ('E001_PRO_M001_001','E001','PRO','M001',1,'t')")
+    con.commit()
+    con.close()
+    db.init_db(path)
+    rows = db.enriched_assays(path)
+    assert rows[0]["replicate_code"] is None
+    os.remove(path)
+
+
 def test_batch_requires_existing_experiment(temp_db):
     with pytest.raises(ValueError):
         db.add_batch("B999", "E_NOPE", "x", db_path=temp_db)
@@ -101,7 +137,7 @@ def test_seed_demo_populates_and_is_idempotent(temp_db):
     db.seed_demo(db_path=temp_db)
     c = db.counts(db_path=temp_db)
     assert c == {"areas": 2, "matrices": 2, "experiments": 2,
-                 "batches": 2, "samples": 3, "assays": 4}
+                 "batches": 2, "samples": 3, "replicates": 3, "assays": 6}
     # running again must reset to the same state (not accumulate)
     db.seed_demo(db_path=temp_db)
     assert db.counts(db_path=temp_db) == c
@@ -115,4 +151,5 @@ def test_clear_all_empties_everything(temp_db):
     db.seed_demo(db_path=temp_db)
     db.clear_all(db_path=temp_db)
     assert db.counts(db_path=temp_db) == {"areas": 0, "matrices": 0, "experiments": 0,
-                                          "batches": 0, "samples": 0, "assays": 0}
+                                          "batches": 0, "samples": 0, "replicates": 0,
+                                          "assays": 0}

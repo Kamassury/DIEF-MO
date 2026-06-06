@@ -5,10 +5,10 @@ catalogs. They are kept here (and version-controlled) on purpose, so any
 change to the standard is explicit and reviewable in a pull request.
 """
 
-# Activity types: origin of the data.
+# Activity types: origin of the data (poster: E = experimental, L = literature).
 ACTIVITY_TYPES = {
-    "EXP": "Experimental",
-    "LIT": "Literature",
+    "E": "Experimental",
+    "L": "Literature",
 }
 
 # Suggested area codes (omics layers / responsible areas).

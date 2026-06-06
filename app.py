@@ -68,6 +68,7 @@ _EDIT_FIELDS = {
     "experiments": [("name", "Name", "text"), ("activity_code", "Activity", "activity")],
     "batches": [("name", "Name", "text")],
     "samples": [("name", "Name", "text")],
+    "replicates": [("name", "Name", "text")],
 }
 
 
@@ -122,13 +123,14 @@ if page == "Overview":
     page_header("Overview")
     st.write(
         "Standardize, encode and trace multi-omics assays. Register core data "
-        "(areas, matrices, experiments) and optional lineage (batches, samples), "
-        "then generate stable identifiers `EXPERIMENT_AREA_MATRIX_SEQ`."
+        "(areas, matrices, experiments) and optional lineage (batches, samples, "
+        "replicates), then generate stable identifiers `EXPERIMENT_AREA_MATRIX_SEQ`."
     )
     c = db.counts()
     cards = [("Areas", c["areas"]), ("Matrices", c["matrices"]),
              ("Experiments", c["experiments"]), ("Batches", c["batches"]),
-             ("Samples", c["samples"]), ("Generated IDs", c["assays"])]
+             ("Samples", c["samples"]), ("Replicates", c["replicates"]),
+             ("Generated IDs", c["assays"])]
     cols = st.columns(3)
     for i, (label, value) in enumerate(cards):
         with cols[i % 3].container(border=True):
@@ -150,7 +152,7 @@ if page == "Overview":
 elif page == "Registration":
     page_header("Registration")
     st.caption("Core entities define the identifier. Batches and samples add lineage.")
-    tabs = st.tabs(["Areas", "Matrices", "Experiments", "Batches", "Samples"])
+    tabs = st.tabs(["Areas", "Matrices", "Experiments", "Batches", "Samples", "Replicates"])
 
     # ----- Areas -----
     with tabs[0]:
@@ -258,14 +260,55 @@ elif page == "Registration":
         st.dataframe(pd.DataFrame(db.list_table("samples")), use_container_width=True)
         _manage_control("samples", "sample")
 
+    # ----- Replicates -----
+    with tabs[5]:
+        samples = db.list_table("samples")
+        if not samples:
+            st.warning("Register a sample first.")
+        else:
+            code = st.text_input("Replicate code (letters/numbers only, e.g. R001)", key="rp_code")
+            name = st.text_input("Name", key="rp_name")
+            sample = st.selectbox("Sample", [s["code"] for s in samples], key="rp_sample")
+            if st.button("Save replicate"):
+                try:
+                    code = validate_code(code, "replicate code")
+                    if not name.strip():
+                        raise ValueError("Name is required.")
+                    _save_with_feedback("replicates", code, "Replicate",
+                                        lambda: db.add_replicate(code, sample, name))
+                except ValueError as e:
+                    st.error(str(e))
+        st.dataframe(pd.DataFrame(db.list_table("replicates")), use_container_width=True)
+        _manage_control("replicates", "replicate")
+
 # ------------------------------------------------------------------ Generate ID
 elif page == "Generate ID":
     page_header("Generate a DIEF-MO identifier")
-    mode = st.radio("Mode", ["From a registered sample", "Direct (experiment + area + matrix)"])
+    mode = st.radio("Mode", ["From a registered replicate", "From a registered sample",
+                             "Direct (experiment + area + matrix)"])
 
     areas = db.list_table("areas")
 
-    if mode == "From a registered sample":
+    if mode == "From a registered replicate":
+        replicates = db.list_table("replicates")
+        if not (replicates and areas):
+            st.warning("Register at least one replicate and one area first.")
+        else:
+            replicate = st.selectbox("Replicate", [r["code"] for r in replicates])
+            area = st.selectbox("Area", [a["code"] for a in areas])
+            rp = db.get_row("replicates", replicate)
+            s = db.get_row("samples", rp["sample_code"]) if rp else None
+            b = db.get_row("batches", s["batch_code"]) if s else None
+            if b and s:
+                st.caption(f"Derived lineage → experiment **{b['experiment_code']}**, "
+                           f"matrix **{s['matrix_code']}**, batch **{s['batch_code']}**, "
+                           f"sample **{s['code']}**")
+            if st.button("Generate ID"):
+                dief_id = db.create_assay_from_replicate(replicate, area)
+                st.success(f"Generated ID: {dief_id}")
+                st.json(decode_id(dief_id))
+
+    elif mode == "From a registered sample":
         samples = db.list_table("samples")
         if not (samples and areas):
             st.warning("Register at least one sample and one area first.")
@@ -336,6 +379,8 @@ elif page == "Lineage":
         info = db.get_lineage(chosen)
         if info:
             chain = f"**{info['dief_id']}**"
+            if info.get("replicate_code"):
+                chain += f"  ←  replicate **{info['replicate_code']}**"
             if info.get("sample_code"):
                 chain += (f"  ←  sample **{info['sample_code']}**"
                           f"  ←  batch **{info.get('batch_code')}**"
@@ -362,6 +407,9 @@ elif page == "Lineage":
                     s = sn["sample"]
                     ids = ", ".join(a["dief_id"] for a in sn["assays"]) or "no IDs yet"
                     st.markdown(f"- Sample {s['code']} ({s['matrix_code']}): {ids}")
+                    reps = ", ".join(r["code"] for r in sn["replicates"])
+                    if reps:
+                        st.markdown(f"    - replicates: {reps}")
 
 # -------------------------------------------------------------- Data quality
 elif page == "Data quality":
@@ -376,8 +424,10 @@ elif page == "Data quality":
         ("Experiments without batches", rep["experiments_without_batches"]),
         ("Batches without samples", rep["batches_without_samples"]),
         ("Samples without identifiers", rep["samples_without_assays"]),
+        ("Replicates without identifiers", rep["replicates_without_assays"]),
         ("Orphan batches (missing experiment)", rep["orphan_batches"]),
         ("Orphan samples (missing batch/matrix)", rep["orphan_samples"]),
+        ("Orphan replicates (missing sample)", rep["orphan_replicates"]),
         ("Identifiers generated without a sample link", rep["direct_assays"]),
     ]
     for label, items in checks:
