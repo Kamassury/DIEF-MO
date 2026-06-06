@@ -7,7 +7,7 @@ import io
 import pandas as pd
 import streamlit as st
 
-from dief_mo import db, vocab
+from dief_mo import db, isa, vocab
 from dief_mo.datadict import DATA_DICTIONARY
 from dief_mo.encoder import decode_id, validate_code
 
@@ -18,7 +18,7 @@ st.sidebar.title("🔬 DIEF-MO")
 page = st.sidebar.radio(
     "Navigation",
     ["Overview", "Registration", "Generate ID", "Batch import",
-     "Lineage", "Data quality", "History"],
+     "Lineage", "Data quality", "FAIR / ISA-Tab", "History"],
 )
 
 
@@ -308,6 +308,52 @@ elif page == "Data quality":
     st.dataframe(
         pd.DataFrame(DATA_DICTIONARY, columns=["column", "description", "type"]),
         use_container_width=True)
+
+# ------------------------------------------------------------- FAIR / ISA-Tab
+elif page == "FAIR / ISA-Tab":
+    st.header("FAIR / ISA-Tab export")
+    st.caption(
+        "ISA-Tab-aligned tables and a FAIR-style metadata record. This follows "
+        "ISA conventions but is not validated by a certified ISA tool — see the "
+        "roadmap for fully validated output via isatools."
+    )
+
+    st.subheader("Investigation metadata")
+    col1, col2 = st.columns(2)
+    meta = {
+        "identifier": col1.text_input("Identifier", "DIEF-MO"),
+        "title": col1.text_input("Title", "DIEF-MO multi-omics dataset"),
+        "contact_name": col2.text_input("Contact name", ""),
+        "contact_email": col2.text_input("Contact email", ""),
+        "keywords": st.text_input("Keywords (comma-separated)", "multi-omics, metadata, data lineage"),
+        "description": st.text_area("Description", ""),
+        "license": st.text_input("License", "MIT"),
+    }
+
+    st.subheader("ISA study table (one row per sample)")
+    study = isa.study_table()
+    st.dataframe(study, use_container_width=True)
+
+    st.subheader("ISA assay table (one row per sample-linked identifier)")
+    assay = isa.assay_table()
+    if assay.empty:
+        st.info("No sample-linked identifiers yet. Generate IDs from registered "
+                "samples to populate the ISA assay table.")
+    else:
+        st.dataframe(assay, use_container_width=True)
+
+    st.subheader("FAIR alignment")
+    st.table(pd.DataFrame(isa.FAIR_ALIGNMENT, columns=["Principle", "How DIEF-MO addresses it"]))
+
+    st.subheader("Download")
+    st.download_button(
+        "Download FAIR / ISA-Tab bundle (.zip)",
+        isa.build_bundle(meta),
+        file_name="dief_fair_isa_bundle.zip",
+        mime="application/zip",
+    )
+    st.caption("Bundle: i_investigation.txt, s_study.txt, a_assay.txt, "
+               "dief_dataset.csv, fair_metadata.json, data_dictionary.csv")
 
 # -------------------------------------------------------------------- History
 elif page == "History":

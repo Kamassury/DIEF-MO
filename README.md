@@ -69,6 +69,7 @@ case the experiment and matrix are derived from the sample's lineage
 - Integration of experimental and literature data
 - Data-quality checks (completeness, orphan references) and a documented data dictionary
 - AI-ready export: one row per identifier with full resolved metadata and lineage (CSV/Excel)
+- ISA-Tab-aligned study/assay tables and a FAIR-style metadata record (downloadable bundle)
 - Automated information extraction via regex (`decode_id`)
 - Scalable and adaptable to different biological domains
 
@@ -104,7 +105,7 @@ python -m pytest
 
 ## Usage
 
-The application provides seven pages:
+The application provides eight pages:
 
 1. **Overview** — summary counts of registered data and generated identifiers.
 2. **Registration** — register core data (areas, matrices, experiments) and
@@ -118,7 +119,9 @@ The application provides seven pages:
    and browse the full experiment tree.
 6. **Data quality** — completeness checks, orphan-reference detection and the
    data dictionary for the exported dataset.
-7. **History** — browse all generated identifiers and export the AI-ready
+7. **FAIR / ISA-Tab** — ISA-aligned study/assay tables, a FAIR metadata record,
+   and a downloadable bundle (investigation, study, assay, dataset, metadata).
+8. **History** — browse all generated identifiers and export the AI-ready
    dataset (CSV/Excel).
 
 ### Using the library directly
@@ -141,10 +144,12 @@ DIEF-MO/
 │   ├── encoder.py          # generate_id / decode_id / validate_code (core)
 │   ├── vocab.py            # controlled vocabularies (edit to match your catalog)
 │   ├── datadict.py         # data dictionary for the exported dataset
+│   ├── isa.py              # ISA-Tab-aligned & FAIR exports
 │   └── db.py               # SQLite persistence (entities, lineage, quality)
 ├── tests/
 │   ├── test_encoder.py
-│   └── test_db.py
+│   ├── test_db.py
+│   └── test_isa.py
 ├── requirements.txt
 └── LICENSE
 ```
@@ -155,12 +160,20 @@ The framework was applied in a pilot study with real multi-omics data from
 microorganism matrices, integrating experimental and literature data into a
 structured tabular format ready for ingestion in AI pipelines.
 
+## Standards & FAIR
+
+DIEF-MO exports an **ISA-Tab-aligned** representation (investigation, study and
+assay files) and a **FAIR-style metadata record** (JSON), available as a single
+downloadable bundle from the *FAIR / ISA-Tab* page. The output follows ISA-Tab
+conventions but is **not** validated against the ISA specification by a certified
+tool; fully validated ISA output via the `isatools` library is on the roadmap.
+
 ## Roadmap
 
 Planned extensions, aligned with the framework described above:
 
-- Alignment with metadata standards (MIAME, MIAPE, ISA-Tab) and the FAIR
-  principles for fully AI-ready outputs.
+- Validated ISA-Tab/ISA-JSON output via the `isatools` library, with ontology
+  term sources (OBI, NCBITaxon) and MIAME/MIAPE checklists.
 - In-place editing of registered entities and search/filtering across records.
 - Optional hosted database for shared, persistent multi-user deployments.
 
