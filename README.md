@@ -158,7 +158,9 @@ structured tabular format ready for ingestion in AI pipelines.
 - Optional hosted database for shared, persistent multi-user deployments.
 
 ## 📚 How to cite
-If this work is useful in your research, please cite it:
+If this work is useful in your research, please cite it. On GitHub you can also
+use the **"Cite this repository"** button (powered by the `CITATION.cff` file in
+the repository root), which exports BibTeX and APA automatically.
 
 ```bibtex
 @inproceedings{souza2026diefmo,
@@ -171,8 +173,8 @@ If this work is useful in your research, please cite it:
 ```
 
 ## 👥 Authors
-Developed by the DIEF-MO team at the Instituto SENAI de Inovação em Sistemas 
-Embarcados (ISI-SE), Brazil. See the citation below for the full author list.
+Developed by the DIEF-MO team at the Instituto SENAI de Inovação em Sistemas
+Embarcados (ISI-SE), Brazil. See *How to cite* above for the full author list.
 
 ## 📄 License
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
